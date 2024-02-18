@@ -48,7 +48,14 @@ def main():
 
     # set up the experiment
     print("Setting up experiment")
-    experiment = Experiment(data, regress=True, ks=[1, 3, 5, 7, 9], answer_col="Rings")
+    experiment = Experiment(
+        data,
+        regress=True,
+        ks=[1, 3, 5, 7, 9],
+        sigmas=[10**i for i in range(-3, 4)],
+        epsilons=[10**i for i in range(-3, 4)],
+        answer_col="Rings",
+    )
 
     # run the experiment
     print("Running experiment")

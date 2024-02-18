@@ -41,8 +41,7 @@ def replace_values_in_column(df, column_name, pairs):
     return df
 
 
-# 2.4 discretization
-# step 4 discretization
+# 2.4 discretization using pandas primitives
 def equal_width_discretize_column(df, column, bins):
     df[column] = pd.cut(df[column], bins, labels=False, retbins=False)
     return df
@@ -55,17 +54,24 @@ def equal_frequency_discretize_column(df, column, bins):
 
 # 2.5 z-score standardization
 def z_score_standardize_column(df, column):
+    # get the col
     col = df[column]
+
+    # get the mean
     u = col.mean()
+
+    # get the standard deviation
     sd = col.std()
+
+    # normalize
     col = (col - sd) / u
+
+    # return new dataframe
     df[column] = col
     return df
 
 
 # make everything a float
-
-
 def make_all_cols_float(df: pd.DataFrame):
     for c in df.columns:
         df[c] = df[c].astype(float)

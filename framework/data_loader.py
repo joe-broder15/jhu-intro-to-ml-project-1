@@ -23,7 +23,7 @@ def load_from_csv():
 
 
 # replace all instances of the target value in a column with either the mean or mode
-# returns a new instance of the column, does not edit in place
+# this is used to impute missing values
 def replace_in_col(df, col_name, target, mode=False):
     if mode:
         replacement = df[col_name].mode()[0]
@@ -33,7 +33,7 @@ def replace_in_col(df, col_name, target, mode=False):
     return df[col_name].replace(target, replacement)
 
 
-# fix all missing values in th ebreast cancer dataset
+# fix all missing values in the breast cancer dataset
 def fix_breast_cancer_data(data):
     # for each column, replace the bad values with the column mode
     for n in breast_cancer_names:
@@ -42,7 +42,7 @@ def fix_breast_cancer_data(data):
     return data
 
 
-# returns dataframes for all csv files with fixes applied and features re-encoded
+# returns dataframes for all csv files with missing values imputed
 def load_data():
     (
         abalone_data,
