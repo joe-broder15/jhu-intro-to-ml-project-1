@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from framework.names import *
 from framework.data_loader import *
 from framework.evaluate import *
@@ -29,19 +30,34 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # re-encode the class feature as 0 for benign and 1 for malignant
-    breast_cancer_data = replace_values_in_column(
-        breast_cancer_data, "Class", [(2, 0), (4, 1)]
-    )
+    # one hot encode non numeric columns in machine data
+    machine_data = one_hot_encode_column(machine_data, "Model Name")
+    machine_data = one_hot_encode_column(machine_data, "Vendor Name")
 
-    # convert all values to floats
-    breast_cancer_data = make_all_cols_float(breast_cancer_data)
+    machine_data = make_all_cols_float(machine_data)
 
-    return breast_cancer_data
+    # re-order columns
+    columns = list(machine_data.columns)
+    reorder_column = columns.pop(-2)
+    columns.append(reorder_column)
+    machine_data = machine_data[columns]
+
+    return machine_data
+
+
+def normalize(data):
+    data = z_score_standardize_column(data, "MCYT")
+    data = z_score_standardize_column(data, "MMIN")
+    data = z_score_standardize_column(data, "MMAX")
+    data = z_score_standardize_column(data, "CACH")
+    data = z_score_standardize_column(data, "CHMIN")
+    data = z_score_standardize_column(data, "CHMAX")
+    data = z_score_standardize_column(data, "ERP")
+    return data
 
 
 def main():
-    print("--- BREAST CANCER EXPERIMENT ---")
+    print("--- MACHINE EXPERIMENT ---")
     print("Initializing Data")
 
     # load the data
@@ -50,8 +66,15 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="Class"
+        data,
+        regress=True,
+        ks=[1, 3, 5, 7, 9],
+        epsilons=[0.05, 0.1, 0.5, 1, 2],
+        sigmas=[10**-2, 10**-1, 1, 10, 100],
+        answer_col="PRP",
     )
+
+    experiment.process_col_dependent = normalize
 
     # run the experiment
     print("Running experiment")

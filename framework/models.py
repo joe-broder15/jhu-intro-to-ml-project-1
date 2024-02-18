@@ -29,7 +29,10 @@ class condensed_nn:
         kernels = self.kernel(sample[:-1], np.array(nns)[:, :-1])
         a = np.sum(kernels * np.array(nns)[:, -1])
         b = np.sum(kernels)
-        return a / b
+        if b == 0:
+            return 0
+        else:
+            return a / b
 
     # does regression on a whole set of data
     def regress(self, data):
@@ -76,9 +79,7 @@ class condensed_nn:
     # get the knn to sample
     def k_nearest_neighbors(self, sample, k):
         # do it faster
-        distances = self.euclidean_distance(
-            sample, self.condensed[:, :-1]
-        )
+        distances = self.euclidean_distance(sample, self.condensed[:, :-1])
         min_indexes = np.argsort(distances.flatten())[:k]
         return [self.condensed[i] for i in min_indexes]
 
@@ -103,7 +104,7 @@ class condensed_nn:
                     # check if they have the same class
                     if not (nn[0][-1] == sample[-1]):
                         changed = True
-                        self.condensed.append(sample)
+                        self.condensed = np.vstack((self.condensed, sample))
                     else:
                         next_batch.append(sample)
 

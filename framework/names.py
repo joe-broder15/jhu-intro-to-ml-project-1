@@ -80,7 +80,7 @@ house_votes_names = [
 machine_names = [
     "Vendor Name",
     "Model Name",
-    "MYCT",
+    "MCYT",
     "MMIN",
     "MMAX",
     "CACH",

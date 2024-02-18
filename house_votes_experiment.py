@@ -29,19 +29,30 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # re-encode the class feature as 0 for benign and 1 for malignant
-    breast_cancer_data = replace_values_in_column(
-        breast_cancer_data, "Class", [(2, 0), (4, 1)]
+    # replace all values in the house votes data
+    for n in house_votes_names[1:]:
+        house_votes_data = replace_values_in_column(
+            house_votes_data, n, [("y", 1), ("n", -1), ("?", 0)]
+        )
+    # re-encode so that party is binary
+    house_votes_data = replace_values_in_column(
+        house_votes_data, "Class Name", [("republican", 0), ("democrat", 1)]
     )
 
     # convert all values to floats
-    breast_cancer_data = make_all_cols_float(breast_cancer_data)
+    house_votes_data = make_all_cols_float(house_votes_data)
 
-    return breast_cancer_data
+    # Reorder the columns so that r/d is last
+    columns = list(house_votes_data.columns)
+    first_column = columns.pop(0)
+    columns.append(first_column)
+    house_votes_data = house_votes_data[columns]
+
+    return house_votes_data
 
 
 def main():
-    print("--- BREAST CANCER EXPERIMENT ---")
+    print("--- HOUSE VOTES EXPERIMENT ---")
     print("Initializing Data")
 
     # load the data
@@ -50,7 +61,10 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="Class"
+        data,
+        regress=False,
+        ks=[i + 1 for i in range(0, 100, 5)],
+        answer_col="Class Name",
     )
 
     # run the experiment

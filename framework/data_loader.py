@@ -1,6 +1,6 @@
 # this file contains functionality for part 2.1 and 2.2 of the project
 
-from names import *
+from .names import *
 import pandas as pd
 
 

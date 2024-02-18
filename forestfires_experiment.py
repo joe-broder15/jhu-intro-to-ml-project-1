@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from framework.names import *
 from framework.data_loader import *
 from framework.evaluate import *
@@ -29,19 +30,34 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # re-encode the class feature as 0 for benign and 1 for malignant
-    breast_cancer_data = replace_values_in_column(
-        breast_cancer_data, "Class", [(2, 0), (4, 1)]
-    )
+    # one hot encode months and days
+    forest_fires_data = one_hot_encode_column(forest_fires_data, "month")
+    forest_fires_data = one_hot_encode_column(forest_fires_data, "day")
 
     # convert all values to floats
-    breast_cancer_data = make_all_cols_float(breast_cancer_data)
+    forest_fires_data = make_all_cols_float(forest_fires_data)
 
-    return breast_cancer_data
+    # do a log transformation on the area
+    nonzero_mask = forest_fires_data["area"] != 0  # Create a mask for nonzero values
+    forest_fires_data.loc[nonzero_mask, "area"] = np.log(
+        forest_fires_data.loc[nonzero_mask, "area"]
+    )
+
+    return forest_fires_data
+
+
+def normalize(data):
+    data = z_score_standardize_column(data, "DMC")
+    data = z_score_standardize_column(data, "FFMC")
+    data = z_score_standardize_column(data, "DC")
+    data = z_score_standardize_column(data, "ISI")
+    data = z_score_standardize_column(data, "temp")
+    data = z_score_standardize_column(data, "RH")
+    return data
 
 
 def main():
-    print("--- BREAST CANCER EXPERIMENT ---")
+    print("--- FOREST FIRES EXPERIMENT ---")
     print("Initializing Data")
 
     # load the data
@@ -50,8 +66,15 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="Class"
+        data,
+        regress=True,
+        ks=[1, 3, 5, 7, 9],
+        epsilons=[0.1, 0.5, 1, 2],
+        sigmas=[10**-2, 10**-1, 1, 10, 100],
+        answer_col="area",
     )
+
+    experiment.process_col_dependent = normalize
 
     # run the experiment
     print("Running experiment")

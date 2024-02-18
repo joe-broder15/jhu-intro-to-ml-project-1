@@ -30,18 +30,32 @@ def init_data():
     ) = load_data()
 
     # re-encode the class feature as 0 for benign and 1 for malignant
-    breast_cancer_data = replace_values_in_column(
-        breast_cancer_data, "Class", [(2, 0), (4, 1)]
+    # re-encode the car data, it is all ordinal
+    car_data = replace_values_in_column(
+        car_data, "buying", [("vhigh", 3), ("high", 2), ("med", 1), ("low", 0)]
+    )
+    car_data = replace_values_in_column(
+        car_data, "maint", [("vhigh", 3), ("high", 2), ("med", 1), ("low", 0)]
+    )
+    car_data = replace_values_in_column(car_data, "doors", [("5more", 5)])
+    car_data = replace_values_in_column(
+        car_data, "persons", [(2, 1), (4, 2), ("more", 3)]
+    )
+    car_data = replace_values_in_column(
+        car_data, "lug_boot", [("small", 1), ("med", 2), ("big", 3)]
+    )
+    car_data = replace_values_in_column(
+        car_data, "safety", [("low", 1), ("high", 2), ("med", 3)]
     )
 
     # convert all values to floats
-    breast_cancer_data = make_all_cols_float(breast_cancer_data)
+    car_data = make_all_cols_float(car_data)
 
-    return breast_cancer_data
+    return car_data
 
 
 def main():
-    print("--- BREAST CANCER EXPERIMENT ---")
+    print("--- CAR EXPERIMENT ---")
     print("Initializing Data")
 
     # load the data
@@ -50,7 +64,7 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="Class"
+        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="safety"
     )
 
     # run the experiment
