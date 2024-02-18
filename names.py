@@ -1,3 +1,5 @@
+# this file contains the names of the columns for each of the cooresponding datasets
+
 # names for the columns in the abalone dataset
 abalone_names = [
     "Sex",
