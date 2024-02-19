@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from framework.names import *
 from framework.data_loader import *
 from framework.evaluate import *
@@ -29,19 +30,24 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # re-encode the class feature as 0 for benign and 1 for malignant
-    breast_cancer_data = replace_values_in_column(
-        breast_cancer_data, "Class", [(2, 0), (4, 1)]
-    )
+    # DO INDEPENDENT PROCESSING AND ENCODING OF DATA HERE (HANDLE CATEGORICAL)
 
     # convert all values to floats
-    breast_cancer_data = make_all_cols_float(breast_cancer_data)
+    YOUR_DATA = make_all_cols_float(YOUR_DATA)
 
-    return breast_cancer_data
+    return YOUR_DATA
 
 
+# used to overload the dependent processing function in the experiment class
+def normalize(data):
+    # NORMALIZE COLUMNS WITH HIGH VARIANCE OR SKEWS HERE
+
+    return data
+
+
+# runs the experiment
 def main():
-    print("--- BREAST CANCER EXPERIMENT ---")
+    print("--- EXPERIMENT ---")
     print("Initializing Data")
 
     # load the data
@@ -49,7 +55,17 @@ def main():
 
     # set up the experiment
     print("Setting up experiment")
-    experiment = Experiment(data, regress=False, ks=[1, 3, 5, 7, 9], answer_col="Class")
+    experiment = Experiment(
+        data,
+        regress=True,
+        ks=[YOUR_K_VALUES],
+        epsilons=[YOUR_EPSILON_VALUES],
+        sigmas=[YOUR_SIGMA_VALUES],
+        answer_col=TARGET_COL,
+    )
+
+    # OVERLOAD EXPERIMENT FUNCTION
+    experiment.process_col_dependent = normalize
 
     # run the experiment
     print("Running experiment")

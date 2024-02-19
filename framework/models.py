@@ -157,3 +157,4 @@ class condensed_nn:
 
             # prepare to keep training on all the values that were not added to the condensed set
             self.data = np.array(next_batch)
+        
