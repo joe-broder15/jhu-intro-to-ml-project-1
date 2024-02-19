@@ -63,7 +63,7 @@ def main():
     experiment = Experiment(
         data,
         regress=False,
-        ks=[i + 1 for i in range(0, 100, 5)],
+        ks=[1, 3, 5, 7, 9],
         answer_col="Class Name",
     )
 

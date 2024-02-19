@@ -52,8 +52,8 @@ def main():
         data,
         regress=True,
         ks=[1, 3, 5, 7, 9],
-        sigmas=[10**i for i in range(-3, 4)],
-        epsilons=[10**i for i in range(-3, 4)],
+        sigmas=[0.1],
+        epsilons=[0.1],
         answer_col="Rings",
     )
 

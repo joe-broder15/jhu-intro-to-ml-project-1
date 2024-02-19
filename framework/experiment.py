@@ -75,6 +75,7 @@ class Experiment:
                         # do column dependent processing
                         k1 = self.process_col_dependent(k1)
                         k2 = self.process_col_dependent(k2)
+                        tune_mod = self.process_col_dependent(self.tune[:])
 
                         # create and train two models on the first two folds
                         model_1 = condensed_nn(
@@ -100,18 +101,18 @@ class Experiment:
                         if self.regression:
                             # regress each model on the tuning set and get mse
                             result_1 = evaluate_mse(
-                                model_1.regress(self.tune), self.tune[self.anser_col]
+                                model_1.regress(tune_mod), self.tune[self.anser_col]
                             )
                             result_2 = evaluate_mse(
-                                model_2.regress(self.tune), self.tune[self.anser_col]
+                                model_2.regress(tune_mod), self.tune[self.anser_col]
                             )
                         else:
                             # classify each tuning set and get the classification score
                             result_1 = evaluate_classes(
-                                model_1.classify(self.tune), self.tune[self.anser_col]
+                                model_1.classify(tune_mod), self.tune[self.anser_col]
                             )
                             result_2 = evaluate_classes(
-                                model_2.classify(self.tune), self.tune[self.anser_col]
+                                model_2.classify(tune_mod), self.tune[self.anser_col]
                             )
 
                         # append the average of the two results to the result array

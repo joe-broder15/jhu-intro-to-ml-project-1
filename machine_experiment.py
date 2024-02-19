@@ -36,7 +36,7 @@ def init_data():
 
     machine_data = make_all_cols_float(machine_data)
 
-    # re-order columns
+    # re-order columns so that target is last
     columns = list(machine_data.columns)
     reorder_column = columns.pop(-2)
     columns.append(reorder_column)
@@ -69,7 +69,7 @@ def main():
         data,
         regress=True,
         ks=[1, 3, 5, 7, 9],
-        epsilons=[0.05, 0.1, 0.5, 1, 2],
+        epsilons=[0.005, 0.01, 0.05, 0.1, 0.5, 1, 2],
         sigmas=[10**-2, 10**-1, 1, 10, 100],
         answer_col="PRP",
     )

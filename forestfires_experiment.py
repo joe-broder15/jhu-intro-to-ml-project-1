@@ -69,7 +69,7 @@ def main():
         data,
         regress=True,
         ks=[1, 3, 5, 7, 9],
-        epsilons=[0.1, 0.5, 1, 2],
+        epsilons=[0.001],
         sigmas=[10**-2, 10**-1, 1, 10, 100],
         answer_col="area",
     )

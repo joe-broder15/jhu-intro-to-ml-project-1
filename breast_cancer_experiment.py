@@ -50,7 +50,7 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[i + 1 for i in range(0, 100, 5)], answer_col="Class"
+        data, regress=False, ks=[1, 3, 5, 7, 9], answer_col="Class"
     )
 
     # run the experiment
