@@ -104,6 +104,15 @@ HELPER FUNCTIONS TO GET SQARED ERROR OF NUMERIC FEATURES
 """
 
 # coming soon
+def b_pi_j(data):
+    
+    pass
+
+def err_pi_predict(data):
+    pass
+
+def err_pi(data):
+    pass
 
 
 class decision_tree_node:
@@ -124,12 +133,17 @@ class decision_tree_node:
         # whether we prune
         self.prune = prune
         # children are leaves?
-        self.children_leaves = False
+        self.children_leaves = children_leaves
         # children
-        self.children = []
+        self.children = children
         # feature split
         self.feature_split = 0
         # value to split based on (used for continuous features)
         self.split_value = 0
         # which features are continuous
         self.numeric_features = numeric_features
+
+    def train(self):
+
+        # determine which feature to split
+
