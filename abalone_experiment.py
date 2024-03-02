@@ -31,10 +31,10 @@ def init_data():
     ) = load_data()
 
     # one hot encode the sex feature of thge abalone dataset
-    abalone_data = one_hot_encode_column(abalone_data, "Sex")
+    # abalone_data = one_hot_encode_column(abalone_data, "Sex")
 
     # convert all values to floats
-    abalone_data = make_all_cols_float(abalone_data)
+    # abalone_data = make_all_cols_float(abalone_data)
 
     return abalone_data
 
@@ -46,21 +46,22 @@ def main():
     # load the data
     data = init_data()
 
-    # set up the experiment
-    print("Setting up experiment")
-    experiment = Experiment(
-        data,
-        regress=True,
-        ks=[1, 3, 5, 7, 9],
-        sigmas=[0.1],
-        epsilons=[0.1],
-        answer_col="Rings",
-    )
+    m = decision_tree_node(data, )
+    # # set up the experiment
+    # print("Setting up experiment")
+    # experiment = Experiment(
+    #     data,
+    #     regress=True,
+    #     ks=[1, 3, 5, 7, 9],
+    #     sigmas=[0.1],
+    #     epsilons=[0.1],
+    #     answer_col="Rings",
+    # )
 
-    # run the experiment
-    print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    # # run the experiment
+    # print("Running experiment")
+    # output_score, naive_score = experiment.run_experiment()
+    # print(f"Average model score {output_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":
