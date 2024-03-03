@@ -34,6 +34,8 @@ def init_data():
         breast_cancer_data, "Class", [(2, 0), (4, 1)]
     )
 
+    breast_cancer_data = breast_cancer_data.drop(columns="Sample code number")
+
     # convert all values to floats
     breast_cancer_data = make_all_cols_float(breast_cancer_data)
 
@@ -45,16 +47,22 @@ def main():
     print("Initializing Data")
 
     # load the data
+
     data = init_data()
+    df = data
+    half_df = len(df) // 2
+    first_half = df.iloc[:half_df,]
+    target = df.iloc[half_df:,]
+    ranges = dict()
+    for c in data.columns:
+        ranges[c] = data[c].unique()
 
-    # set up the experiment
-    print("Setting up experiment")
-    experiment = Experiment(data, regress=False, ks=[1, 3, 5, 7, 9], answer_col="Class")
-
-    # run the experiment
-    print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    m = decision_tree_node(
+        first_half, "Class", False, [], True, False, ranges, no_value_leaf=True
+    )
+    m.train()
+    c = m.classify_data(target)
+    print(evaluate_classes(target["Class"], c))
 
 
 if __name__ == "__main__":

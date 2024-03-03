@@ -46,7 +46,9 @@ def main():
     # load the data
     data = init_data()
 
-    m = decision_tree_node(data, )
+    m = decision_tree_node(
+        data,
+    )
     # # set up the experiment
     # print("Setting up experiment")
     # experiment = Experiment(

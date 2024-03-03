@@ -2,37 +2,6 @@ import numpy as np
 import pandas as pd
 
 """
-The decision tree model
-"""
-
-"""
-tree must have:
-    class/regression
-    root
-    dataset
-
-    pruning
-    discrete or not?
-
-    are my children leaves?
-
-    train
-    partition
-    classify
-
-    for discrete
-        get IV
-        get gain
-        get gain ratio
-
-    for regression:
-        get mse
-
-
-
-"""
-
-"""
 HELPER FUNCTIONS FOR GETTING THE GAIN RATIO OF DISCRETE FEATURES
 """
 
@@ -40,11 +9,8 @@ HELPER FUNCTIONS FOR GETTING THE GAIN RATIO OF DISCRETE FEATURES
 # gets the IV term of a discrete feature, the feature being a pandas dataframe column
 def IV(data_pi, feature_col):
     # get counts of each feature
-    col = data_pi[feature_col]
-    feature_counter = col.value_counts().to_dict()
-    # convert the counts to a numpy array
-    arr = np.array(list(feature_counter.values()))
-    # get entropy in parallen for speed
+    col = data_pi[feature_col].values
+    arr = np.unique(col, return_counts=True)[1]
     return np.sum(-1 * (arr / len(col)) * np.log2(arr / len(col)))
 
 
@@ -53,11 +19,8 @@ def H(data_pi, class_label):
     # size of data
     data_pi_size = len(data_pi)
 
-    # get the number of classes
-    class_counter = data_pi[class_label].value_counts().to_dict()
-
     # get the c_pi_l values
-    c_pi_l = np.array(list(class_counter.values()))
+    c_pi_l = np.unique(data_pi[class_label].values, return_counts=True)[1]
 
     # calculate
     ratio = c_pi_l / data_pi_size
@@ -72,17 +35,12 @@ def E_pi(data_pi, feature_col, class_label):
     # size of data
     data_pi_size = len(data_pi)
 
-    # get counts of each feature
-    feature_counter = data_pi[feature_col].value_counts().to_dict()
-
     # convert the counts to a numpy array
-    arr = np.array(list(feature_counter.values())) / data_pi_size
+    fv = np.unique(data_pi[feature_col].values, return_counts=True)
+    arr = fv[1] / data_pi_size
 
     # get all subsets of the data
-    subsets = [
-        data_pi[data_pi[feature_col] == feature_val]
-        for feature_val in feature_counter.keys()
-    ]
+    subsets = [data_pi[data_pi[feature_col] == feature_val] for feature_val in fv[0]]
 
     h_vals = [H(s, class_label) for s in subsets]
 
@@ -96,11 +54,16 @@ def gain(data_pi, feature_col, class_label):
 
 # get the gain ratio
 def gain_ratio(data_pi, feature_col, class_label):
-    g = gain(data_pi, feature_col, class_label)
     iv = IV(data_pi, feature_col)
     if iv == 0:
         return 0
+    g = gain(data_pi, feature_col, class_label)
     return g / iv
+
+
+"""
+HELPER FUNCTIONS FOR GETTING THE GAIN RATIO OF NUMERIC FEATURES
+"""
 
 
 # get the gain ratio of a numeric feature
@@ -115,16 +78,44 @@ def gain_ratio_numeric(data_pi, feature_col, class_label, split):
     return gain_ratio(tmp, feature_col, class_label)
 
 
-# gets gain ratio of the numeric feature and tests both the mean and median for the split
+# gets the gain ratio of a numeric feature and tests many splits. returns the best one
 def gain_ratio_numeric_auto(data_pi, feature_col, class_label):
-    return max(
-        gain_ratio_numeric(
-            data_pi, feature_col, class_label, data_pi[feature_col].median()
-        ),
-        gain_ratio_numeric(
-            data_pi, feature_col, class_label, data_pi[feature_col].mean()
-        ),
+    # options for splits
+    opts = []
+    # get ratio for splitting on the median
+    opts.append(
+        (
+            gain_ratio_numeric(
+                data_pi, feature_col, class_label, data_pi[feature_col].median()
+            ),
+            data_pi[feature_col].median(),
+        )
     )
+    # get ratio for splitting on the mean
+    opts.append(
+        (
+            gain_ratio_numeric(
+                data_pi, feature_col, class_label, data_pi[feature_col].mean()
+            ),
+            data_pi[feature_col].mean(),
+        )
+    )
+
+    # get gain ratio at 4 evenly spaced splits
+    min_val = data_pi[feature_col].min()
+    max_val = data_pi[feature_col].min()
+    splits = np.linspace(min_val, max_val, num=6)[1:5]
+    for s in splits:
+        opts.append(
+            (
+                gain_ratio_numeric(
+                    data_pi, feature_col, class_label, data_pi[feature_col].mean()
+                ),
+                s,
+            )
+        )
+
+    return max(opts, key=lambda x: x[0])
 
 
 # splits a dataframe by unique instances of a feature
@@ -143,10 +134,15 @@ def split_dataframe_by_threshold(dataframe, column_name, threshold):
     return greater_than_df, less_than_df
 
 
+"""
+FUNCTIONS TO DETERMINE IF A NODE SHOULD BE MADE A LEAF
+"""
+
+
 # check if leaf
 def check_same_values(df, column_name):
     # Get unique values from the specified column
-    unique_values = df[column_name].unique()
+    unique_values = np.unique(df[column_name].values)
 
     # If there's only one unique value, all values in the column are the same
     if len(unique_values) == 1:
@@ -167,27 +163,81 @@ def check_is_leaf(df: pd.DataFrame, column_name):
 
 
 """
-HELPER FUNCTIONS TO GET SQARED ERROR OF NUMERIC FEATURES
+HELPER FUNCTIONS TO GET SQARED ERROR 
 """
 
-# coming soon
+
+def squared_error_branch(data, class_label):
+    prediction = data[class_label].mean()
+    se = np.sum((data[:][class_label] - prediction) ** 2) / len(data)
+    return se
 
 
-def err_pi_predict(data):
-    pass
+def err_pi_discrete(data, column_name, class_label):
+    l = len(data)
+    d_tmp = data[:]
+    dfs = split_dataframe_by_feature(d_tmp, column_name)
+    return np.sum([squared_error_branch(d, class_label) for d in dfs.values()]) / l
 
 
-def err_pi(data):
-    pass
+# get the gain ratio of a numeric feature
+def err_pi_numeric(data_pi, feature_col, class_label, split):
+    # copy the dataframe for manipulation
+    tmp = data_pi[:]
+
+    # replace all values less than the split and greater than the split
+    tmp[feature_col] = tmp[feature_col] < split
+
+    # get the gain ratio after temporarily discretizing in this way
+    return gain_ratio(tmp, feature_col, class_label)
+
+
+# gets the gain ratio of a numeric feature and tests many splits. returns the best one
+def gain_ratio_numeric_auto(data_pi, feature_col, class_label):
+    # options for splits
+    opts = []
+    # get ratio for splitting on the median
+    opts.append(
+        (
+            gain_ratio_numeric(
+                data_pi, feature_col, class_label, data_pi[feature_col].median()
+            ),
+            data_pi[feature_col].median(),
+        )
+    )
+    # get ratio for splitting on the mean
+    opts.append(
+        (
+            gain_ratio_numeric(
+                data_pi, feature_col, class_label, data_pi[feature_col].mean()
+            ),
+            data_pi[feature_col].mean(),
+        )
+    )
+
+    # get gain ratio at 4 evenly spaced splits
+    min_val = data_pi[feature_col].min()
+    max_val = data_pi[feature_col].min()
+    splits = np.linspace(min_val, max_val, num=6)[1:5]
+    for s in splits:
+        opts.append(
+            (
+                gain_ratio_numeric(
+                    data_pi, feature_col, class_label, data_pi[feature_col].mean()
+                ),
+                s,
+            )
+        )
+
+    return max(opts, key=lambda x: x[0])
 
 
 """
-MAKE SURE IT DOES NOT SPLIT BASED ON CLASS!!!!!!!!
+THE DECISION TREE MODE, THIS REPRESENTS ONE NODE AS THIS MODEL IS RECURSIVE
 """
 
 
 class decision_tree_node:
-
     # class constructor
     def __init__(
         self,
@@ -198,7 +248,8 @@ class decision_tree_node:
         classification=True,
         prune=False,
         discrete_ranges=dict(),
-        ignore_split=[],
+        level=0,
+        no_value_leaf=False,
     ) -> None:
         # the training data
         self.data = data
@@ -220,11 +271,13 @@ class decision_tree_node:
         self.class_label = class_label
         # ranges of all discrete values:
         self.discrete_ranges = discrete_ranges
-        self.ignore_split = ignore_split
+        # recursion depth
+        self.level = level
+        # create a leaf if no value is found for a discrete feature
+        self.no_value_leaf = no_value_leaf
 
     # recursively classify a single sample / row of a dataframe
     def classify(self, sample: pd.DataFrame):
-
         # check if we are a leaf, if so get a plurality vote
         if self.leaf:
             return self.data[self.class_label].mode()[0]
@@ -249,7 +302,6 @@ class decision_tree_node:
         out = []
         # iterate over each sample
         for index, row in data.iterrows():
-
             out.append(self.classify(row))
 
         return np.array(out)
@@ -265,62 +317,66 @@ class decision_tree_node:
 
         # switch whether we are doing classification or regression
         if self.classification:
-
             # get the gain across all the features
             max_gain = None
-            f = None
             numeric_split = False
             for col in self.data.columns[:-1]:
-                # if col in self.ignore_split:
-                #     continue
-
                 if col in self.numeric_features:
-                    g = gain_ratio_numeric_auto(self.data, col, self.class_label)
+                    gr, self.split_value = gain_ratio_numeric_auto(
+                        self.data, col, self.class_label
+                    )
                 else:
-                    g = gain_ratio(self.data, col, self.class_label)
+                    gr = gain_ratio(self.data, col, self.class_label)
 
-                if max_gain == None or g > max_gain:
-                    f = col
-                    max_gain = g
+                if max_gain == None or gr > max_gain:
+                    self.feature_split = col
+                    max_gain = gr
                     numeric_split = col in self.numeric_features
-
-            # set the feature our current node will split at
-            self.feature_split = f
 
             # after selecting the feature to split off of, do the actual splitting
 
             # if the feature we split on was numeric
             if numeric_split:
-
                 # split the data into two new frames
-                self.children = split_dataframe_by_threshold(
+                split_child_1, split_child_2 = split_dataframe_by_threshold(
                     self.data,
                     self.feature_split,
-                    self.data[self.feature_split].median(),
+                    self.split_value,
                 )
 
-                # get the median, the the value we split on
-                self.split_value = self.data[self.feature_split].median()
+                # check if empty
+                c1_leaf = False
+                c2_leaf = False
+                if len(split_child_1) == 0:
+                    c2_leaf = True
+                    split_child_1 = self.data[:]
+                if len(split_child_2) == 0:
+                    c1_leaf = True
+                    split_child_2 = self.data[:]
 
                 # make two child nodes
                 child_1 = decision_tree_node(
-                    self.children[1],
+                    split_child_2,
                     self.class_label,
-                    leaf=check_same_values(self.children[1], self.class_label),
+                    leaf=check_is_leaf(split_child_2, self.class_label) or c1_leaf,
                     numeric_features=self.numeric_features,
                     classification=self.classification,
                     prune=self.prune,
                     discrete_ranges=self.discrete_ranges,
+                    level=self.level + 1,
+                    no_value_leaf=self.no_value_leaf,
                 )
 
                 child_2 = decision_tree_node(
-                    self.children[0],
+                    split_child_1,
                     self.class_label,
-                    leaf=check_same_values(self.children[0], self.class_label),
+                    leaf=check_is_leaf(split_child_1, self.class_label) or c1_leaf,
                     numeric_features=self.numeric_features,
                     classification=self.classification,
                     prune=self.prune,
                     discrete_ranges=self.discrete_ranges,
+                    level=self.level + 1,
+                    no_value_leaf=self.no_value_leaf,
                 )
 
                 # set the current node's children and train them
@@ -338,21 +394,24 @@ class decision_tree_node:
                 self.children = dict()
                 # iterate over each split dataframe
                 for j in self.discrete_ranges[self.feature_split]:
+                    nvl_flag = False
                     if j in dataframes_dict:
                         data_pi_j = dataframes_dict[j]
                     else:
+                        nvl_flag = self.no_value_leaf
                         data_pi_j = self.data[:]
                         data_pi_j[self.feature_split] = j
 
                     child_j = decision_tree_node(
                         data_pi_j,
                         self.class_label,
-                        leaf=check_is_leaf(data_pi_j, self.class_label),
+                        leaf=check_is_leaf(data_pi_j, self.class_label) or nvl_flag,
                         numeric_features=self.numeric_features,
                         classification=self.classification,
                         prune=self.prune,
                         discrete_ranges=self.discrete_ranges,
-                        ignore_split=self.ignore_split,
+                        level=self.level + 1,
+                        no_value_leaf=self.no_value_leaf,
                     )
 
                     child_j.train()
