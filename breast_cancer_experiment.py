@@ -58,7 +58,7 @@ def main():
         ranges[c] = data[c].unique()
 
     m = decision_tree_node(
-        first_half, "Class", False, [], True, False, ranges, no_value_leaf=True
+        first_half, "Class", False, data.columns, True, False, ranges, no_value_leaf=True
     )
     m.train()
     c = m.classify_data(target)

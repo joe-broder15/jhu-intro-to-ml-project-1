@@ -82,35 +82,14 @@ def gain_ratio_numeric(data_pi, feature_col, class_label, split):
 def gain_ratio_numeric_auto(data_pi, feature_col, class_label):
     # options for splits
     opts = []
-    # get ratio for splitting on the median
-    opts.append(
-        (
-            gain_ratio_numeric(
-                data_pi, feature_col, class_label, data_pi[feature_col].median()
-            ),
-            data_pi[feature_col].median(),
-        )
-    )
-    # get ratio for splitting on the mean
-    opts.append(
-        (
-            gain_ratio_numeric(
-                data_pi, feature_col, class_label, data_pi[feature_col].mean()
-            ),
-            data_pi[feature_col].mean(),
-        )
-    )
-
-    # get gain ratio at 4 evenly spaced splits
+    # get gain ratio at 10 evenly spaced splits
     min_val = data_pi[feature_col].min()
-    max_val = data_pi[feature_col].min()
-    splits = np.linspace(min_val, max_val, num=6)[1:5]
+    max_val = data_pi[feature_col].max()
+    splits = np.linspace(min_val, max_val, num=7)[1:6]
     for s in splits:
         opts.append(
             (
-                gain_ratio_numeric(
-                    data_pi, feature_col, class_label, data_pi[feature_col].mean()
-                ),
+                gain_ratio_numeric(data_pi, feature_col, class_label, s),
                 s,
             )
         )
@@ -185,51 +164,27 @@ def err_pi_numeric(data_pi, feature_col, class_label, split):
     # copy the dataframe for manipulation
     tmp = data_pi[:]
 
-    # replace all values less than the split and greater than the split
-    tmp[feature_col] = tmp[feature_col] < split
+    # get each side of the split
+    r = tmp[tmp[feature_col] < split]
+    l = tmp[tmp[feature_col] >= split]
 
-    # get the gain ratio after temporarily discretizing in this way
-    return gain_ratio(tmp, feature_col, class_label)
+    # get the mse
+    return (
+        squared_error_branch(l, class_label) + squared_error_branch(r, class_label)
+    ) / len(tmp)
 
 
 # gets the gain ratio of a numeric feature and tests many splits. returns the best one
-def gain_ratio_numeric_auto(data_pi, feature_col, class_label):
+def err_pi_numeric_auto(data_pi, feature_col, class_label):
     # options for splits
     opts = []
-    # get ratio for splitting on the median
-    opts.append(
-        (
-            gain_ratio_numeric(
-                data_pi, feature_col, class_label, data_pi[feature_col].median()
-            ),
-            data_pi[feature_col].median(),
-        )
-    )
-    # get ratio for splitting on the mean
-    opts.append(
-        (
-            gain_ratio_numeric(
-                data_pi, feature_col, class_label, data_pi[feature_col].mean()
-            ),
-            data_pi[feature_col].mean(),
-        )
-    )
-
-    # get gain ratio at 4 evenly spaced splits
+    # get gain ratio at 6 evenly spaced splits
     min_val = data_pi[feature_col].min()
     max_val = data_pi[feature_col].min()
-    splits = np.linspace(min_val, max_val, num=6)[1:5]
+    splits = np.linspace(min_val, max_val, num=7)[1:6]
     for s in splits:
-        opts.append(
-            (
-                gain_ratio_numeric(
-                    data_pi, feature_col, class_label, data_pi[feature_col].mean()
-                ),
-                s,
-            )
-        )
-
-    return max(opts, key=lambda x: x[0])
+        opts.append((err_pi_numeric(data_pi, feature_col, class_label, s)))
+    return min(opts, key=lambda x: x[0])
 
 
 """
@@ -322,13 +277,12 @@ class decision_tree_node:
             numeric_split = False
             for col in self.data.columns[:-1]:
                 if col in self.numeric_features:
-                    gr, self.split_value = gain_ratio_numeric_auto(
-                        self.data, col, self.class_label
-                    )
+                    gr, sv = gain_ratio_numeric_auto(self.data, col, self.class_label)
+                    self.split_value = sv
                 else:
                     gr = gain_ratio(self.data, col, self.class_label)
 
-                if max_gain == None or gr > max_gain:
+                if max_gain == None or gr >= max_gain:
                     self.feature_split = col
                     max_gain = gr
                     numeric_split = col in self.numeric_features
@@ -338,7 +292,8 @@ class decision_tree_node:
             # if the feature we split on was numeric
             if numeric_split:
                 # split the data into two new frames
-                split_child_1, split_child_2 = split_dataframe_by_threshold(
+
+                split_1, split_2 = split_dataframe_by_threshold(
                     self.data,
                     self.feature_split,
                     self.split_value,
@@ -347,18 +302,16 @@ class decision_tree_node:
                 # check if empty
                 c1_leaf = False
                 c2_leaf = False
-                if len(split_child_1) == 0:
-                    c2_leaf = True
-                    split_child_1 = self.data[:]
-                if len(split_child_2) == 0:
-                    c1_leaf = True
-                    split_child_2 = self.data[:]
+                if len(split_1) == 0 or len(split_2) == 0:
+                    self.leaf = True
+                    self.children = self.data
+                    return
 
                 # make two child nodes
                 child_1 = decision_tree_node(
-                    split_child_2,
+                    split_1,
                     self.class_label,
-                    leaf=check_is_leaf(split_child_2, self.class_label) or c1_leaf,
+                    leaf=c1_leaf or check_is_leaf(split_1, self.class_label),
                     numeric_features=self.numeric_features,
                     classification=self.classification,
                     prune=self.prune,
@@ -368,9 +321,9 @@ class decision_tree_node:
                 )
 
                 child_2 = decision_tree_node(
-                    split_child_1,
+                    split_2,
                     self.class_label,
-                    leaf=check_is_leaf(split_child_1, self.class_label) or c1_leaf,
+                    leaf=c2_leaf or check_is_leaf(split_2, self.class_label),
                     numeric_features=self.numeric_features,
                     classification=self.classification,
                     prune=self.prune,
