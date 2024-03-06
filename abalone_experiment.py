@@ -31,10 +31,18 @@ def init_data():
     ) = load_data()
 
     # one hot encode the sex feature of thge abalone dataset
-    # abalone_data = one_hot_encode_column(abalone_data, "Sex")
+    abalone_data = replace_values_in_column(
+        abalone_data,
+        "Sex",
+        [
+            ("M", 0),
+            ("F", 1),
+            ("I", 2),
+        ],
+    )
 
     # convert all values to floats
-    # abalone_data = make_all_cols_float(abalone_data)
+    abalone_data = make_all_cols_float(abalone_data)
 
     return abalone_data
 
@@ -46,9 +54,36 @@ def main():
     # load the data
     data = init_data()
 
+    df = data
+    half_df = len(df) // 2
+    first_half = df.iloc[:half_df,]
+    target = df.iloc[half_df:,]
+    ranges = dict()
+    for c in data.columns:
+        ranges[c] = data[c].unique()
+
     m = decision_tree_node(
-        data,
+        first_half,
+        "Rings",
+        False,
+        [
+            "Length",
+            "Diameter",
+            "Height",
+            "Whole weight",
+            "Shucked weight",
+            "Viscera weight",
+            "Shell weight",
+        ],
+        False,
+        False,
+        ranges,
+        no_value_leaf=True,
     )
+    m.train()
+    c = m.predict_data(target)
+    print(evaluate_mse(target["Rings"], c))
+
     # # set up the experiment
     # print("Setting up experiment")
     # experiment = Experiment(

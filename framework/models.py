@@ -83,16 +83,9 @@ def gain_ratio_numeric_auto(data_pi, feature_col, class_label):
     # options for splits
     opts = []
     # get gain ratio at 10 evenly spaced splits
-    min_val = data_pi[feature_col].min()
-    max_val = data_pi[feature_col].max()
-    splits = np.linspace(min_val, max_val, num=7)[1:6]
+    splits = [data_pi[feature_col].quantile(i / 5) for i in range(1, 5)]
     for s in splits:
-        opts.append(
-            (
-                gain_ratio_numeric(data_pi, feature_col, class_label, s),
-                s,
-            )
-        )
+        opts.append((gain_ratio_numeric(data_pi, feature_col, class_label, s), s))
 
     return max(opts, key=lambda x: x[0])
 
@@ -147,6 +140,8 @@ HELPER FUNCTIONS TO GET SQARED ERROR
 
 
 def squared_error_branch(data, class_label):
+    if len(data) == 0:
+        return 0
     prediction = data[class_label].mean()
     se = np.sum((data[:][class_label] - prediction) ** 2) / len(data)
     return se
@@ -178,12 +173,10 @@ def err_pi_numeric(data_pi, feature_col, class_label, split):
 def err_pi_numeric_auto(data_pi, feature_col, class_label):
     # options for splits
     opts = []
-    # get gain ratio at 6 evenly spaced splits
-    min_val = data_pi[feature_col].min()
-    max_val = data_pi[feature_col].min()
-    splits = np.linspace(min_val, max_val, num=7)[1:6]
+    # get gain ratio at quantimes
+    splits = [data_pi[feature_col].quantile(i / 5) for i in range(1, 5)]
     for s in splits:
-        opts.append((err_pi_numeric(data_pi, feature_col, class_label, s)))
+        opts.append((err_pi_numeric(data_pi, feature_col, class_label, s), s))
     return min(opts, key=lambda x: x[0])
 
 
@@ -261,6 +254,36 @@ class decision_tree_node:
 
         return np.array(out)
 
+    # recursively classify a single sample / row of a dataframe
+    def predict(self, sample: pd.DataFrame):
+        # check if we are a leaf, if so get a plurality vote
+        if self.leaf:
+            return self.data[self.class_label].mean()
+
+        # otherwise go deeper
+        # check if discrete feature
+        if self.split_value == None:
+            tmp = sample[self.feature_split]
+            return self.children[tmp].classify(sample)
+        # if continuous feature
+        else:
+            # get the value
+            tmp = sample[self.feature_split]
+            # branch if greater or less than
+            if tmp >= self.split_value:
+                return self.children[0].classify(sample)
+            else:
+                return self.children[1].classify(sample)
+
+    # classify entire dataset, top level function
+    def predict_data(self, data: pd.DataFrame):
+        out = []
+        # iterate over each sample
+        for index, row in data.iterrows():
+            out.append(self.predict(row))
+
+        return np.array(out)
+
     # train the decision tree
     def train(self):
 
@@ -270,11 +293,12 @@ class decision_tree_node:
             self.children = self.data
             return
 
+        numeric_split = False
+
         # switch whether we are doing classification or regression
         if self.classification:
-            # get the gain across all the features
+            # pick the feature that maximizes gain
             max_gain = None
-            numeric_split = False
             for col in self.data.columns[:-1]:
                 if col in self.numeric_features:
                     gr, sv = gain_ratio_numeric_auto(self.data, col, self.class_label)
@@ -286,90 +310,101 @@ class decision_tree_node:
                     self.feature_split = col
                     max_gain = gr
                     numeric_split = col in self.numeric_features
+        else:
+            # pick the feture that minimizes MSE
+            min_mse = None
+            for col in self.data.columns[:-1]:
+                if col in self.numeric_features:
+                    mse, sv = err_pi_numeric_auto(self.data, col, self.class_label)
+                    self.split_value = sv
+                else:
+                    mse = err_pi_discrete(self.data, col, self.class_label)
 
-            # after selecting the feature to split off of, do the actual splitting
+                if min_mse == None or mse <= min_mse:
+                    self.feature_split = col
+                    min_mse = mse
+                    numeric_split = col in self.numeric_features
 
-            # if the feature we split on was numeric
-            if numeric_split:
-                # split the data into two new frames
+        # after selecting the feature to split off of, do the actual splitting
 
-                split_1, split_2 = split_dataframe_by_threshold(
-                    self.data,
-                    self.feature_split,
-                    self.split_value,
-                )
+        # if the feature we split on was numeric
+        if numeric_split:
+            # split the data into two new frames
 
-                # check if empty
-                c1_leaf = False
-                c2_leaf = False
-                if len(split_1) == 0 or len(split_2) == 0:
-                    self.leaf = True
-                    self.children = self.data
-                    return
+            split_1, split_2 = split_dataframe_by_threshold(
+                self.data,
+                self.feature_split,
+                self.split_value,
+            )
 
-                # make two child nodes
-                child_1 = decision_tree_node(
-                    split_1,
-                    self.class_label,
-                    leaf=c1_leaf or check_is_leaf(split_1, self.class_label),
-                    numeric_features=self.numeric_features,
-                    classification=self.classification,
-                    prune=self.prune,
-                    discrete_ranges=self.discrete_ranges,
-                    level=self.level + 1,
-                    no_value_leaf=self.no_value_leaf,
-                )
+            # check if empty
+            c1_leaf = False
+            c2_leaf = False
+            if len(split_1) == 0 or len(split_2) == 0:
+                self.leaf = True
+                self.children = self.data
+                return
 
-                child_2 = decision_tree_node(
-                    split_2,
-                    self.class_label,
-                    leaf=c2_leaf or check_is_leaf(split_2, self.class_label),
-                    numeric_features=self.numeric_features,
-                    classification=self.classification,
-                    prune=self.prune,
-                    discrete_ranges=self.discrete_ranges,
-                    level=self.level + 1,
-                    no_value_leaf=self.no_value_leaf,
-                )
+            # make two child nodes
+            child_1 = decision_tree_node(
+                split_1,
+                self.class_label,
+                leaf=c1_leaf or check_is_leaf(split_1, self.class_label),
+                numeric_features=self.numeric_features,
+                classification=self.classification,
+                prune=self.prune,
+                discrete_ranges=self.discrete_ranges,
+                level=self.level + 1,
+                no_value_leaf=self.no_value_leaf,
+            )
 
-                # set the current node's children and train them
-                self.children = (child_1, child_2)
-                self.children[0].train()
-                self.children[1].train()
+            child_2 = decision_tree_node(
+                split_2,
+                self.class_label,
+                leaf=c2_leaf or check_is_leaf(split_2, self.class_label),
+                numeric_features=self.numeric_features,
+                classification=self.classification,
+                prune=self.prune,
+                discrete_ranges=self.discrete_ranges,
+                level=self.level + 1,
+                no_value_leaf=self.no_value_leaf,
+            )
 
-            else:
-                # split dataframe over values
-                dataframes_dict = split_dataframe_by_feature(
-                    self.data, self.feature_split
-                )
-
-                # create dict of children
-                self.children = dict()
-                # iterate over each split dataframe
-                for j in self.discrete_ranges[self.feature_split]:
-                    nvl_flag = False
-                    if j in dataframes_dict:
-                        data_pi_j = dataframes_dict[j]
-                    else:
-                        nvl_flag = self.no_value_leaf
-                        data_pi_j = self.data[:]
-                        data_pi_j[self.feature_split] = j
-
-                    child_j = decision_tree_node(
-                        data_pi_j,
-                        self.class_label,
-                        leaf=check_is_leaf(data_pi_j, self.class_label) or nvl_flag,
-                        numeric_features=self.numeric_features,
-                        classification=self.classification,
-                        prune=self.prune,
-                        discrete_ranges=self.discrete_ranges,
-                        level=self.level + 1,
-                        no_value_leaf=self.no_value_leaf,
-                    )
-
-                    child_j.train()
-
-                    self.children[j] = child_j
+            # set the current node's children and train them
+            self.children = (child_1, child_2)
+            self.children[0].train()
+            self.children[1].train()
 
         else:
-            return
+            # split dataframe over values
+            dataframes_dict = split_dataframe_by_feature(self.data, self.feature_split)
+
+            # create dict of children
+            self.children = dict()
+            # iterate over each split dataframe
+            for j in self.discrete_ranges[self.feature_split]:
+                nvl_flag = False
+                if j in dataframes_dict:
+                    data_pi_j = dataframes_dict[j]
+                else:
+                    nvl_flag = self.no_value_leaf
+                    data_pi_j = self.data[:]
+                    data_pi_j[self.feature_split] = j
+
+                child_j = decision_tree_node(
+                    data_pi_j,
+                    self.class_label,
+                    leaf=check_is_leaf(data_pi_j, self.class_label) or nvl_flag,
+                    numeric_features=self.numeric_features,
+                    classification=self.classification,
+                    prune=self.prune,
+                    discrete_ranges=self.discrete_ranges,
+                    level=self.level + 1,
+                    no_value_leaf=self.no_value_leaf,
+                )
+
+                child_j.train()
+
+                self.children[j] = child_j
+
+        return
