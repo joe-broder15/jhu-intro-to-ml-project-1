@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 
 """
 HELPER FUNCTIONS FOR GETTING THE GAIN RATIO OF DISCRETE FEATURES
@@ -287,8 +288,6 @@ class decision_tree_node:
     # train the decision tree
     def train(self):
 
-        print(len(self.data))
-
         if self.leaf:
             self.children = self.data
             return
@@ -376,6 +375,14 @@ class decision_tree_node:
             self.children[1].train()
 
         else:
+
+            # if we found that the best column to split on has identical values for all features,
+            # declare ourselves a leaf
+            if check_same_values(self.data, self.feature_split):
+                self.leaf = True
+                self.children = self.data
+                return
+
             # split dataframe over values
             dataframes_dict = split_dataframe_by_feature(self.data, self.feature_split)
 
@@ -408,3 +415,38 @@ class decision_tree_node:
                 self.children[j] = child_j
 
         return
+
+    # do a single prune of the tree
+    def prune(self):
+
+        # check if we are doing classification or regression
+
+        # continuous feature
+        if self.split_value:
+
+            # check if both children are leaves
+            if self.children[0].leaf and self.children[1].leaf:
+                # if so make the current node a leaf
+                self.leaf = True
+                self.data = self.children[0].data + self.children[1].data
+                self.children = None
+
+            else:
+                # otherwise go deeper
+                random.choice(self.children).prune()
+
+        # discrete feature
+        else:
+
+            for c in self.children:
+                if c.leaf == False:
+                    c.prune()
+                    return
+            self.data = None
+            for c in self.children:
+                if self.data == None:
+                    self.data = c.data
+                else:
+                    self.data += c.data
+            self.leaf = True
+            return

@@ -54,19 +54,11 @@ def main():
     # load the data
     data = init_data()
 
-    df = data
-    half_df = len(df) // 2
-    first_half = df.iloc[:half_df,]
-    target = df.iloc[half_df:,]
-    ranges = dict()
-    for c in data.columns:
-        ranges[c] = data[c].unique()
-
-    m = decision_tree_node(
-        first_half,
-        "Rings",
-        False,
-        [
+    print("Setting up experiment")
+    experiment = Experiment(
+        data,
+        regress=True,
+        numeric_features=[
             "Length",
             "Diameter",
             "Height",
@@ -75,30 +67,13 @@ def main():
             "Viscera weight",
             "Shell weight",
         ],
-        False,
-        False,
-        ranges,
-        no_value_leaf=True,
+        answer_col="Rings",
     )
-    m.train()
-    c = m.predict_data(target)
-    print(evaluate_mse(target["Rings"], c))
 
-    # # set up the experiment
-    # print("Setting up experiment")
-    # experiment = Experiment(
-    #     data,
-    #     regress=True,
-    #     ks=[1, 3, 5, 7, 9],
-    #     sigmas=[0.1],
-    #     epsilons=[0.1],
-    #     answer_col="Rings",
-    # )
-
-    # # run the experiment
-    # print("Running experiment")
-    # output_score, naive_score = experiment.run_experiment()
-    # print(f"Average model score {output_score} | Average naive score {naive_score}")
+    # run the experiment
+    print("Running experiment")
+    output_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":
