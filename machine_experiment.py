@@ -32,7 +32,7 @@ def init_data():
 
     machine_data["Model Name"] = pd.factorize(machine_data["Model Name"])[0]
     machine_data["Vendor Name"] = pd.factorize(machine_data["Vendor Name"])[0]
-    machine_data = machine_data.drop(columns=["Model Name"])
+    # machine_data = machine_data.drop(columns=["Model Name"])
 
     machine_data = make_all_cols_float(machine_data)
 
@@ -50,7 +50,7 @@ def main():
 
     # load the data
     data = init_data()
-    nf = ["MCYT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP"]
+    nf = ["MCYT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "ERP"]
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
@@ -64,8 +64,8 @@ def main():
 
     # run the experiment
     print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    output_score, prune_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average pruned score {prune_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":

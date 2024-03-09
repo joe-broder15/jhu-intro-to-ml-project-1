@@ -173,14 +173,14 @@ def squared_error_branch(data, class_label):
     # get the prediction for this dataframe
     prediction = data[class_label].mean()
     # get the squared error
-    se = np.sum((data[:][class_label] - prediction) ** 2) / len(data)
+    se = np.sum((data[class_label] - prediction) ** 2) / len(data)
     return se
 
 
 # gets mse for a discrete split
 def err_pi_discrete(data, column_name, class_label):
     l = len(data)
-    d_tmp = data[:]
+    d_tmp = data
     # get all branches for the discrete feature
     dfs = split_dataframe_by_feature(d_tmp, column_name)
     # get mean of the squared errors for all branches
@@ -316,6 +316,8 @@ class decision_tree_node:
 
     # train the decision tree
     def train(self):
+        
+        # print(len(self.data))
 
         # base recursive case, set children to data and return
         if self.leaf:

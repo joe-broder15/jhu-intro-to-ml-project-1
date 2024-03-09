@@ -11,3 +11,13 @@ differences
 -performance
 -excluding features 
 -pandas
+
+future things
+-genetic algorithm to select features
+-make discrete splitting faster
+-allow re-splitting
+
+modifications to experiments:
+- cancer all numeric
+- firest fires  -
+- machine -

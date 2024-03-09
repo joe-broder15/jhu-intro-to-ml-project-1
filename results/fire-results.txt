@@ -1,0 +1,21 @@
+--- FOREST FIRES EXPERIMENT ---
+Initializing Data
+Setting up experiment
+Running experiment
+Performing cross-validation
+Fold 1
+pruning model 1
+pruning model 2
+Fold 2
+pruning model 1
+pruning model 2
+Fold 3
+pruning model 1
+pruning model 2
+Fold 4
+pruning model 1
+pruning model 2
+Fold 5
+pruning model 1
+pruning model 2
+Average model score 2.3057519781230473 | Average pruned score 1.9627824149634037 | Average naive score 1.9236494033203815

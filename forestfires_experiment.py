@@ -69,6 +69,9 @@ def init_data():
         forest_fires_data.loc[nonzero_mask, "area"]
     )
 
+    # remove some features
+    forest_fires_data = forest_fires_data.drop(columns=["day"])
+
     # convert all values to floats
     forest_fires_data = make_all_cols_float(forest_fires_data)
     return forest_fires_data
@@ -90,6 +93,7 @@ def main():
             "FFMC",
             "X",
             "Y",
+            "month",
             "DMC",
             "DC",
             "ISI",
@@ -105,8 +109,8 @@ def main():
 
     # run the experiment
     print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    output_score, prune_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average pruned score {prune_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":

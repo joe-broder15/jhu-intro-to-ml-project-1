@@ -1,0 +1,21 @@
+--- MACHINE EXPERIMENT ---
+Initializing Data
+Setting up experiment
+Running experiment
+Performing cross-validation
+Fold 1
+pruning model 1
+pruning model 2
+Fold 2
+pruning model 1
+pruning model 2
+Fold 3
+pruning model 1
+pruning model 2
+Fold 4
+pruning model 1
+pruning model 2
+Fold 5
+pruning model 1
+pruning model 2
+Average model score 13329.130508127733 | Average pruned score 12752.350376662056 | Average naive score 29441.83398483492
