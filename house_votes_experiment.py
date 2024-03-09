@@ -57,36 +57,19 @@ def main():
 
     # load the data
     data = init_data()
-    df = data
-    half_df = len(df) // 2
-    first_half = df.iloc[:half_df,]
-    target = df.iloc[half_df:,]
-    # data = first_half
-    # # set up the experiment
-    # print("Setting up experiment")
-    # experiment = Experiment(
-    #     data,
-    #     regress=False,
-    #     ks=[1, 3, 5, 7, 9],
-    #     answer_col="Class Name",
-    # )
 
-    # # run the experiment
-    # print("Running experiment")
-    # output_score, naive_score = experiment.run_experiment()
-    # print(f"Average model score {output_score} | Average naive score {naive_score}")
-
-    ranges = dict()
-    for c in data.columns:
-        ranges[c] = data[c].unique()
-
-    m = decision_tree_node(
-        first_half, "Class Name", False, [], True, False, ranges, no_value_leaf=True
+    print("Setting up experiment")
+    experiment = Experiment(
+        data,
+        regress=False,
+        numeric_features=[],
+        answer_col="Class Name",
     )
-    # print(ranges)
-    m.train()
-    c = m.classify_data(target)
-    print(evaluate_classes(target["Class Name"], c))
+
+    # run the experiment
+    print("Running experiment")
+    output_score, prune_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average pruned score {prune_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":

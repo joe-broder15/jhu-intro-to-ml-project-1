@@ -64,13 +64,13 @@ def main():
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
-        data, regress=False, ks=[1, 3, 5, 7, 9], answer_col="safety"
+        data, regress=False, numeric_features=data.columns, answer_col="safety"
     )
 
     # run the experiment
     print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    output_score, prune_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average pruned score {prune_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":

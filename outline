@@ -1,0 +1,13 @@
+abstract
+
+the algorithms
+
+differences 
+
+-pruning
+-how to handle missing
+-how to check leaves 
+-why we remove features
+-performance
+-excluding features 
+-pandas

@@ -31,8 +31,12 @@ def init_data():
     ) = load_data()
 
     # one hot encode non numeric columns in machine data
-    machine_data = one_hot_encode_column(machine_data, "Model Name")
-    machine_data = one_hot_encode_column(machine_data, "Vendor Name")
+    # machine_data = one_hot_encode_column(machine_data, "Model Name")
+    # machine_data = one_hot_encode_column(machine_data, "Vendor Name")
+    # machine_data = machine_data.drop(columns="Model Name")
+    machine_data["Model Name"] = pd.factorize(machine_data["Model Name"])[0]
+    machine_data["Vendor Name"] = pd.factorize(machine_data["Vendor Name"])[0]
+    machine_data = machine_data.drop(columns=["Model Name"])
 
     machine_data = make_all_cols_float(machine_data)
 
@@ -46,15 +50,15 @@ def init_data():
 
 
 # overloads
-def normalize(data):
-    data = z_score_standardize_column(data, "MCYT")
-    data = z_score_standardize_column(data, "MMIN")
-    data = z_score_standardize_column(data, "MMAX")
-    data = z_score_standardize_column(data, "CACH")
-    data = z_score_standardize_column(data, "CHMIN")
-    data = z_score_standardize_column(data, "CHMAX")
-    data = z_score_standardize_column(data, "ERP")
-    return data
+# def normalize(data):
+#     data = z_score_standardize_column(data, "MCYT")
+#     data = z_score_standardize_column(data, "MMIN")
+#     data = z_score_standardize_column(data, "MMAX")
+#     data = z_score_standardize_column(data, "CACH")
+#     data = z_score_standardize_column(data, "CHMIN")
+#     data = z_score_standardize_column(data, "CHMAX")
+#     data = z_score_standardize_column(data, "ERP")
+#     return data
 
 
 def main():
@@ -63,19 +67,17 @@ def main():
 
     # load the data
     data = init_data()
-
+    nf = ["MCYT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP"]
     # set up the experiment
     print("Setting up experiment")
     experiment = Experiment(
         data,
         regress=True,
-        ks=[1, 3, 5, 7, 9],
-        epsilons=[0.005, 0.01, 0.05, 0.1, 0.5, 1, 2],
-        sigmas=[10**-2, 10**-1, 1, 10, 100],
+        numeric_features=nf,
         answer_col="PRP",
     )
 
-    experiment.process_col_dependent = normalize
+    # experiment.process_col_dependent = normalize
 
     # run the experiment
     print("Running experiment")

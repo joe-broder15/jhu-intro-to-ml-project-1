@@ -61,7 +61,7 @@ class Experiment:
     """
 
     def train_and_validate(self):
-        
+
         # output arrays for model predictions as well as naive model predictions
         outputs = []
         naive_outputs = []
@@ -86,7 +86,6 @@ class Experiment:
                 numeric_features=self.numeric_features,
                 classification=not self.regression,
                 discrete_ranges=self.ranges,
-                no_value_leaf=True,
             )
             model_2 = decision_tree_node(
                 k2,
@@ -94,7 +93,6 @@ class Experiment:
                 numeric_features=self.numeric_features,
                 classification=not self.regression,
                 discrete_ranges=self.ranges,
-                no_value_leaf=True,
             )
 
             model_1.train()
@@ -113,6 +111,27 @@ class Experiment:
                 naive_result_2 = evaluate_mse(
                     k1[self.anser_col], null_model(k1, self.anser_col, classify=False)
                 )
+
+                # do the pruning
+                print("pruning model 1")
+                last_prune_1 = result_1
+                cur_prune_1 = result_1
+                while cur_prune_1 <= last_prune_1:
+                    last_prune_1 = cur_prune_1
+                    model_1.prune_node()
+                    cur_prune_1 = evaluate_mse(
+                        k2[self.anser_col], model_1.predict_data(k2)
+                    )
+                print("pruning model 2")
+                last_prune_2 = result_2
+                cur_prune_2 = result_2
+                while cur_prune_2 <= last_prune_2:
+                    last_prune_2 = cur_prune_2
+                    model_2.prune_node()
+                    cur_prune_2 = evaluate_mse(
+                        k1[self.anser_col], model_2.predict_data(k1)
+                    )
+
             else:
                 # get classification score for our models
                 result_1 = evaluate_classes(
@@ -129,8 +148,28 @@ class Experiment:
                     k1[self.anser_col], null_model(k1, self.anser_col, classify=True)
                 )
 
+                last_prune_1 = -1
+                cur_prune_1 = result_1
+                print("pruning model 1")
+                while cur_prune_1 > last_prune_1:
+                    last_prune_1 = cur_prune_1
+                    model_1.prune_node()
+                    cur_prune_1 = evaluate_classes(
+                        model_1.classify_data(k2), k2[self.anser_col]
+                    )
+                print("pruning model 2")
+                last_prune_2 = -1
+                cur_prune_2 = result_2
+                while cur_prune_2 > last_prune_2:
+                    last_prune_2 = cur_prune_2
+                    model_2.prune_node()
+                    cur_prune_2 = evaluate_classes(
+                        model_2.classify_data(k1), k1[self.anser_col]
+                    )
+
             # append the average our two results to the output array
             outputs.append((result_1 + result_2) / 2)
+            prune_outputs.append((last_prune_1 + last_prune_2) / 2)
 
             # append the average of the naive results to the output array
             naive_outputs.append((naive_result_1 + naive_result_2) / 2)
@@ -138,7 +177,8 @@ class Experiment:
         # get the averages of the two arrays and return them
         naive_outputs = np.array(naive_outputs)
         outputs = np.array(outputs)
-        return naive_outputs.mean(), outputs.mean()
+        prune_outputs = np.array(prune_outputs)
+        return naive_outputs.mean(), prune_outputs.mean(), outputs.mean()
 
     """
     this is the entry point into the experiment after constructing.
@@ -149,7 +189,7 @@ class Experiment:
     def run_experiment(self):
 
         # train and evaluate our models with the best params
-        naive_score, model_score = self.train_and_validate()
+        naive_score, prune_score, model_score = self.train_and_validate()
 
         # return results
-        return model_score, naive_score
+        return model_score, prune_score, naive_score

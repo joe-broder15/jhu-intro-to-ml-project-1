@@ -30,12 +30,38 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # one hot encode months and days
-    forest_fires_data = one_hot_encode_column(forest_fires_data, "month")
-    forest_fires_data = one_hot_encode_column(forest_fires_data, "day")
-
-    # convert all values to floats
-    forest_fires_data = make_all_cols_float(forest_fires_data)
+    # convert strings to ints
+    forest_fires_data = replace_values_in_column(
+        forest_fires_data,
+        "month",
+        [
+            ("jan", 1),
+            ("feb", 2),
+            ("mar", 3),
+            ("apr", 4),
+            ("may", 5),
+            ("jun", 6),
+            ("jul", 7),
+            ("aug", 8),
+            ("sep", 9),
+            ("oct", 10),
+            ("nov", 11),
+            ("dec", 12),
+        ],
+    )
+    forest_fires_data = replace_values_in_column(
+        forest_fires_data,
+        "day",
+        [
+            ("mon", 1),
+            ("tue", 2),
+            ("wed", 3),
+            ("thu", 4),
+            ("fri", 5),
+            ("sat", 6),
+            ("sun", 7),
+        ],
+    )
 
     # do a log transformation on the area
     nonzero_mask = forest_fires_data["area"] != 0  # Create a mask for nonzero values
@@ -43,17 +69,9 @@ def init_data():
         forest_fires_data.loc[nonzero_mask, "area"]
     )
 
+    # convert all values to floats
+    forest_fires_data = make_all_cols_float(forest_fires_data)
     return forest_fires_data
-
-
-def normalize(data):
-    data = z_score_standardize_column(data, "DMC")
-    data = z_score_standardize_column(data, "FFMC")
-    data = z_score_standardize_column(data, "DC")
-    data = z_score_standardize_column(data, "ISI")
-    data = z_score_standardize_column(data, "temp")
-    data = z_score_standardize_column(data, "RH")
-    return data
 
 
 def main():
@@ -68,13 +86,20 @@ def main():
     experiment = Experiment(
         data,
         regress=True,
-        ks=[1, 3, 5, 7, 9],
-        epsilons=[0.001],
-        sigmas=[10**-2, 10**-1, 1, 10, 100],
+        numeric_features=[
+            "FFMC",
+            "DMC",
+            "DC",
+            "ISI",
+            "temp",
+            "RH",
+            "wind",
+            "rain",
+        ],
         answer_col="area",
     )
 
-    experiment.process_col_dependent = normalize
+    # experiment.process_col_dependent = normalize
 
     # run the experiment
     print("Running experiment")

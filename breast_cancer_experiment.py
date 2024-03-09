@@ -47,22 +47,20 @@ def main():
     print("Initializing Data")
 
     # load the data
-
     data = init_data()
-    df = data
-    half_df = len(df) // 2
-    first_half = df.iloc[:half_df,]
-    target = df.iloc[half_df:,]
-    ranges = dict()
-    for c in data.columns:
-        ranges[c] = data[c].unique()
 
-    m = decision_tree_node(
-        first_half, "Class", False, data.columns, True, False, ranges, no_value_leaf=True
+    print("Setting up experiment")
+    experiment = Experiment(
+        data,
+        regress=False,
+        numeric_features=data.columns,
+        answer_col="Class",
     )
-    m.train()
-    c = m.classify_data(target)
-    print(evaluate_classes(target["Class"], c))
+
+    # run the experiment
+    print("Running experiment")
+    output_score, naive_score = experiment.run_experiment()
+    print(f"Average model score {output_score} | Average naive score {naive_score}")
 
 
 if __name__ == "__main__":
