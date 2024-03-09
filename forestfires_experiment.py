@@ -88,6 +88,8 @@ def main():
         regress=True,
         numeric_features=[
             "FFMC",
+            "X",
+            "Y",
             "DMC",
             "DC",
             "ISI",

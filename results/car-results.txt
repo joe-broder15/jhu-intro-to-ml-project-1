@@ -1,0 +1,21 @@
+--- CAR EXPERIMENT ---
+Initializing Data
+Setting up experiment
+Running experiment
+Performing cross-validation
+Fold 1
+pruning model 1
+pruning model 2
+Fold 2
+pruning model 1
+pruning model 2
+Fold 3
+pruning model 1
+pruning model 2
+Fold 4
+pruning model 1
+pruning model 2
+Fold 5
+pruning model 1
+pruning model 2
+Average model score 0.27916063675832126 | Average pruned score 0.34645441389290876 | Average naive score 0.3522431259044862

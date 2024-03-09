@@ -101,9 +101,11 @@ class Experiment:
             # evaluate the model on the opposing folds and get naive results
             # check if we are doing regression or classification
             if self.regression:
+
                 # get mse for our models results
                 result_1 = evaluate_mse(k2[self.anser_col], model_1.predict_data(k2))
                 result_2 = evaluate_mse(k1[self.anser_col], model_2.predict_data(k1))
+
                 # get mse for naive predictions
                 naive_result_1 = evaluate_mse(
                     k2[self.anser_col], null_model(k2, self.anser_col, classify=False)
@@ -112,25 +114,39 @@ class Experiment:
                     k1[self.anser_col], null_model(k1, self.anser_col, classify=False)
                 )
 
-                # do the pruning
+                # prune the first model until returns deminish on the tuning set
                 print("pruning model 1")
-                last_prune_1 = result_1
-                cur_prune_1 = result_1
+                last_prune_1 = evaluate_mse(
+                    self.tune[self.anser_col], model_1.predict_data(self.tune)
+                )
+                cur_prune_1 = last_prune_1
                 while cur_prune_1 <= last_prune_1:
                     last_prune_1 = cur_prune_1
                     model_1.prune_node()
                     cur_prune_1 = evaluate_mse(
-                        k2[self.anser_col], model_1.predict_data(k2)
+                        self.tune[self.anser_col], model_1.predict_data(self.tune)
                     )
+
+                # prune the second model until returns deminish on the tuning set
                 print("pruning model 2")
-                last_prune_2 = result_2
-                cur_prune_2 = result_2
+                last_prune_2 = evaluate_mse(
+                    self.tune[self.anser_col], model_2.predict_data(self.tune)
+                )
+                cur_prune_2 = last_prune_2
                 while cur_prune_2 <= last_prune_2:
                     last_prune_2 = cur_prune_2
                     model_2.prune_node()
                     cur_prune_2 = evaluate_mse(
-                        k1[self.anser_col], model_2.predict_data(k1)
+                        self.tune[self.anser_col], model_2.predict_data(self.tune)
                     )
+
+                # evaluate the pruned models
+                last_prune_1 = evaluate_mse(
+                    k2[self.anser_col], model_1.predict_data(k2)
+                )
+                last_prune_2 = evaluate_mse(
+                    k1[self.anser_col], model_1.predict_data(k1)
+                )
 
             else:
                 # get classification score for our models
@@ -148,24 +164,39 @@ class Experiment:
                     k1[self.anser_col], null_model(k1, self.anser_col, classify=True)
                 )
 
-                last_prune_1 = -1
-                cur_prune_1 = result_1
+                # prune the first model until returns deminish on the tuning set
                 print("pruning model 1")
+                last_prune_1 = evaluate_classes(
+                    self.tune[self.anser_col], model_1.classify_data(self.tune)
+                )
+                cur_prune_1 = last_prune_1
                 while cur_prune_1 > last_prune_1:
                     last_prune_1 = cur_prune_1
                     model_1.prune_node()
                     cur_prune_1 = evaluate_classes(
-                        model_1.classify_data(k2), k2[self.anser_col]
+                        self.tune[self.anser_col], model_1.classify_data(self.tune)
                     )
+
+                # prune the second model until returns deminish on the tuning set
                 print("pruning model 2")
-                last_prune_2 = -1
-                cur_prune_2 = result_2
+                last_prune_2 = evaluate_classes(
+                    self.tune[self.anser_col], model_2.classify_data(self.tune)
+                )
+                cur_prune_2 = last_prune_2
                 while cur_prune_2 > last_prune_2:
                     last_prune_2 = cur_prune_2
                     model_2.prune_node()
                     cur_prune_2 = evaluate_classes(
-                        model_2.classify_data(k1), k1[self.anser_col]
+                        self.tune[self.anser_col], model_2.classify_data(self.tune)
                     )
+
+                # evaluate the pruned models
+                last_prune_1 = evaluate_classes(
+                    k2[self.anser_col], model_1.classify_data(k2)
+                )
+                last_prune_2 = evaluate_classes(
+                    k1[self.anser_col], model_1.classify_data(k1)
+                )
 
             # append the average our two results to the output array
             outputs.append((result_1 + result_2) / 2)

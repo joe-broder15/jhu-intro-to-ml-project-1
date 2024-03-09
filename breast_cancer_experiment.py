@@ -59,8 +59,10 @@ def main():
 
     # run the experiment
     print("Running experiment")
-    output_score, naive_score = experiment.run_experiment()
-    print(f"Average model score {output_score} | Average naive score {naive_score}")
+    output_score, prune_score, naive_score = experiment.run_experiment()
+    print(
+        f"Average model score {output_score} | Average pruned score {prune_score} | Average naive score {naive_score}"
+    )
 
 
 if __name__ == "__main__":

@@ -257,8 +257,6 @@ class decision_tree_node:
     def classify(self, sample: pd.DataFrame):
         # check if we are a leaf, if so get a plurality vote
         if self.leaf:
-            # if len(self.children[self.class_label].mode()) == 0:
-            # print(self.children)
             return self.children[self.class_label].mode()[0]
 
         # otherwise go deeper
@@ -287,7 +285,7 @@ class decision_tree_node:
 
     # recursively classify a single sample / row of a dataframe
     def predict(self, sample: pd.DataFrame):
-        # check if we are a leaf, if so get a plurality vote
+        # check if we are a leaf, if so get a the mean
         if self.leaf:
             return self.children[self.class_label].mean()
 
@@ -296,6 +294,7 @@ class decision_tree_node:
         if self.split_value == None:
             tmp = sample[self.feature_split]
             return self.children[tmp].predict(sample)
+
         # if continuous feature
         else:
             # get the value
@@ -310,31 +309,35 @@ class decision_tree_node:
     def predict_data(self, data: pd.DataFrame):
         out = []
         # iterate over each sample
-        for index, row in data.iterrows():
+        for _, row in data.iterrows():
+            # predict for the row
             out.append(self.predict(row))
-
         return np.array(out)
 
     # train the decision tree
     def train(self):
 
+        # base recursive case, set children to data and return
         if self.leaf:
             self.children = self.data
             return
 
+        # flag to track if we split on a numeric feature
         numeric_split = False
 
-        # switch whether we are doing classification or regression
+        # switch whether we are doing classification or regression and chose a feature to split on at this node
         if self.classification:
             # pick the feature that maximizes gain
             max_gain = None
+            # iterate over all cols
             for col in self.data.columns[:-1]:
+                # check if we are on a numeric feature and get the gain ratio accordingly
                 if col in self.numeric_features:
                     gr, sv = gain_ratio_numeric_auto(self.data, col, self.class_label)
                     self.split_value = sv
                 else:
                     gr = gain_ratio(self.data, col, self.class_label)
-
+                # track the feature that maximizes the gain ratio
                 if max_gain == None or gr >= max_gain:
                     self.feature_split = col
                     max_gain = gr
@@ -352,6 +355,7 @@ class decision_tree_node:
                 else:
                     mse = err_pi_discrete(self.data, col, self.class_label)
 
+                # track the feature that minimzes mse
                 if min_mse == None or mse <= min_mse:
                     self.feature_split = col
                     min_mse = mse
@@ -360,19 +364,19 @@ class decision_tree_node:
         # if the feature we split on was numeric
         if numeric_split:
             # split the data into two new frames
-
             split_1, split_2 = split_dataframe_by_threshold(
                 self.data,
                 self.feature_split,
                 self.split_value,
             )
 
+            # if either of the splits is empty, replace it with the current dataset
             if len(split_1) == 0:
                 split_1 = self.data[:]
             elif len(split_2) == 0:
                 split_2 = self.data[:]
 
-            # drop the feature we split on
+            # drop the feature we split on from both datasets
             split_1 = split_1.drop(columns=[self.feature_split])
             split_2 = split_2.drop(columns=[self.feature_split])
 
@@ -416,15 +420,20 @@ class decision_tree_node:
 
             # create dict of children
             self.children = dict()
-            # iterate over each split dataframe
+
+            # iterate over all possible values for the feathre we split on
             for j in self.discrete_ranges[self.feature_split]:
+                # if that feature was found in the split at this node, use the cooresponding split
                 if j in dataframes_dict:
                     data_pi_j = dataframes_dict[j]
+                # if there were no instances of this value, use the total dataset
                 else:
                     data_pi_j = self.data[:]
 
+                # remove the feature we split on from the child dataset, ensuring it will not be selected again
                 data_pi_j = data_pi_j.drop(columns=[self.feature_split])
 
+                # create the child node
                 child_j = decision_tree_node(
                     data_pi_j,
                     self.class_label,
@@ -435,8 +444,10 @@ class decision_tree_node:
                     level=self.level + 1,
                 )
 
+                # train the child
                 child_j.train()
 
+                # set the child
                 self.children[j] = child_j
 
         return

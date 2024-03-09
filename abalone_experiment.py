@@ -46,7 +46,7 @@ def init_data():
 
     return abalone_data
 
-
+# run the experiment
 def main():
     print("--- ABALONE EXPERIMENT ---")
     print("Initializing Data")
@@ -54,6 +54,7 @@ def main():
     # load the data
     data = init_data()
 
+    # create experiment
     print("Setting up experiment")
     experiment = Experiment(
         data,

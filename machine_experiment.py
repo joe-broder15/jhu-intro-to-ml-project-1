@@ -30,10 +30,6 @@ def init_data():
         machine_data,
     ) = load_data()
 
-    # one hot encode non numeric columns in machine data
-    # machine_data = one_hot_encode_column(machine_data, "Model Name")
-    # machine_data = one_hot_encode_column(machine_data, "Vendor Name")
-    # machine_data = machine_data.drop(columns="Model Name")
     machine_data["Model Name"] = pd.factorize(machine_data["Model Name"])[0]
     machine_data["Vendor Name"] = pd.factorize(machine_data["Vendor Name"])[0]
     machine_data = machine_data.drop(columns=["Model Name"])
@@ -47,19 +43,6 @@ def init_data():
     machine_data = machine_data[columns]
 
     return machine_data
-
-
-# overloads
-# def normalize(data):
-#     data = z_score_standardize_column(data, "MCYT")
-#     data = z_score_standardize_column(data, "MMIN")
-#     data = z_score_standardize_column(data, "MMAX")
-#     data = z_score_standardize_column(data, "CACH")
-#     data = z_score_standardize_column(data, "CHMIN")
-#     data = z_score_standardize_column(data, "CHMAX")
-#     data = z_score_standardize_column(data, "ERP")
-#     return data
-
 
 def main():
     print("--- MACHINE EXPERIMENT ---")

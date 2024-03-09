@@ -1,0 +1,21 @@
+--- BREAST CANCER EXPERIMENT ---
+Initializing Data
+Setting up experiment
+Running experiment
+Performing cross-validation
+Fold 1
+pruning model 1
+pruning model 2
+Fold 2
+pruning model 1
+pruning model 2
+Fold 3
+pruning model 1
+pruning model 2
+Fold 4
+pruning model 1
+pruning model 2
+Fold 5
+pruning model 1
+pruning model 2
+Average model score 0.9409664618535587 | Average pruned score 0.952752176139273 | Average naive score 0.6583358934971839
