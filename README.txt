@@ -1,10 +1,8 @@
-JHU INTRO TO ML PROJECT 1
+JHU INTRO TO ML PROJECT 2
 
-Experiment results can be seen in results.txt
+Experiment results can be seen in /results
 
 To reproduce these (similar) results, run the cooresponding [dataset_name]_experiment.py field
-
-All experiments and the copy-paste experiment template are here in the project root.
 
 All data is in the /data folder
 
